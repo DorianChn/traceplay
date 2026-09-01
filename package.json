@@ -1,6 +1,6 @@
 {
   "name": "traceplay",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "VCR + pytest for AI agents: record real LLM/tool trajectories once, replay them offline, and assert behavior in CI.",
   "type": "module",
   "bin": {

@@ -6,9 +6,8 @@ import type { Cassette, CassetteMeta, TraceEvent } from '../types.js';
  *   line 0  = meta header  { cassette:"traceplay", version:1, ...CassetteMeta }
  *   line 1+ = one TraceEvent per line
  *
- * Why JSONL instead of one big JSON: recorders can append events without
- * holding the whole trace in memory, and a crashed run still leaves a
- * readable prefix.
+ * JSONL lets the recorder append events without holding the whole trace in
+ * memory, and a crashed run still leaves a readable prefix.
  */
 
 const MARKER = 'traceplay';
@@ -46,7 +45,7 @@ export async function readCassette(path: string): Promise<Cassette> {
   }
   const header = JSON.parse(lines[0]) as Record<string, unknown>;
   if (header.cassette !== MARKER) {
-    throw new Error(`Not an traceplay cassette (missing marker): ${path}`);
+    throw new Error(`Not a traceplay cassette (missing marker): ${path}`);
   }
   const meta: CassetteMeta = {
     recordedAt: typeof header.recordedAt === 'string' ? header.recordedAt : new Date(0).toISOString(),

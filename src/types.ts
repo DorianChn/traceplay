@@ -1,9 +1,6 @@
 /**
- * Core trace model — the single source of truth shared by the recorder,
- * replayer, assertion engine and reporters.
- *
- * Rule: this file is frozen during M1. Any breaking change after release
- * bumps Cassette.version and ships a migration in cassette/store.ts.
+ * Core trace model — shared by recorder, replayer, assertion engine and reporters.
+ * Frozen for v0.1. Breaking changes require Cassette.version bump + migration.
  */
 
 export type EventType =
@@ -15,11 +12,8 @@ export type EventType =
   | 'agent.error';
 
 export interface BaseEvent {
-  /** Stable id, unique within one trace. */
   id: string;
-  /** 0-based ordering index. */
   seq: number;
-  /** ISO-8601 timestamp. */
   at: string;
   type: EventType;
 }
@@ -33,10 +27,11 @@ export interface LLMRequestEvent extends BaseEvent {
   type: 'llm.request';
   provider: 'openai-compatible' | 'anthropic' | 'other';
   model: string;
-  /** Normalized message array (provider-specific shapes flattened here). */
+  /** Request path, e.g. /v1/chat/completions — used by replayer to route. */
+  path?: string;
   messages: unknown[];
   temperature?: number;
-  /** sha256 of the canonicalized request (volatile fields removed). */
+  /** sha256 of canonicalized request body (volatile fields removed). */
   requestHash: string;
 }
 
@@ -50,8 +45,12 @@ export interface LLMResponseEvent extends BaseEvent {
   /** Id of the matching LLMRequestEvent. */
   requestId: string;
   status: number;
-  /** Raw provider payload; answer text extraction lives in the assert engine. */
+  /** Normalized answer payload — used by answer assertions. */
   output: unknown;
+  /** Raw response body — used by replayer to return exact bytes. */
+  rawBody?: string;
+  /** Response headers (redacted) — used by replayer. */
+  headers?: Record<string, string>;
   usage?: TokenUsage;
   latencyMs?: number;
 }
@@ -84,23 +83,17 @@ export type TraceEvent =
 
 export interface CassetteMeta {
   recordedAt: string;
-  /** True when secrets (Authorization, api keys) were stripped on record. */
   redacted: boolean;
   providerBaseUrl?: string;
   project?: string;
 }
 
-/** A cassette = one recorded trajectory, persisted as JSONL. */
 export interface Cassette {
   version: 1;
   meta: CassetteMeta;
   events: TraceEvent[];
 }
 
-/**
- * Declarative assertions. Implemented kinds are wired in assert/engine.ts;
- * kinds marked `todo` there are scheduled for later milestones (see ROADMAP).
- */
 export type Assertion =
   | { kind: 'tool.called'; name: string; times?: number }
   | { kind: 'tool.order'; names: string[] }
@@ -114,7 +107,6 @@ export type Assertion =
 
 export interface TestCase {
   name: string;
-  /** Path to cassette, relative to the suite file. */
   cassette: string;
   assertions: Assertion[];
 }
@@ -130,4 +122,25 @@ export interface AssertResult {
   status: AssertStatus;
   assertion: Assertion;
   message: string;
+}
+
+export interface CaseReport {
+  name: string;
+  cassette: string;
+  results: AssertResult[];
+  passed: boolean;
+}
+
+export interface Summary {
+  pass: number;
+  fail: number;
+  todo: number;
+  exitCode: number;
+}
+
+export interface TestReport {
+  suite: string;
+  cases: CaseReport[];
+  summary: Summary;
+  generatedAt: string;
 }

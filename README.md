@@ -1,19 +1,20 @@
 # traceplay
 
-> **VCR + pytest for AI agents.** Record a real LLM/tool trajectory once, replay it offline with zero tokens, and assert behavior in CI.
+> **Record, replay, and test AI agent trajectories.** VCR + pytest for AI agents — capture a real run once, replay it offline with zero tokens, and assert behavior in CI.
 
 [![CI](https://github.com/<your-handle>/traceplay/actions/workflows/ci.yml/badge.svg)](https://github.com/<your-handle>/traceplay/actions)
 [![npm version](https://img.shields.io/npm/v/traceplay.svg)](https://www.npmjs.com/package/traceplay)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[![tests](https://img.shields.io/badge/tests-39%20passing-brightgreen)]()
 
 ## Why
 
-AI agents fail silently: a prompt edit, a model upgrade, or a tool schema change can make an agent "succeed" while doing the wrong thing. Existing tools either watch production traces (Langfuse, Phoenix) or string-match subprocess output (skill test harnesses). **traceplay gives you a local, deterministic, language-agnostic regression suite for multi-step agent trajectories** — the same way VCR/nock gave web apps reliable HTTP tests.
+AI agents fail silently. A prompt edit, a model upgrade, or a tool schema change can make an agent "succeed" while doing the wrong thing. Existing tools either watch production traces (Langfuse, Phoenix) or lint skill markdown (skillkit, skilllint). **traceplay gives you a local, deterministic, language-agnostic regression suite for multi-step agent trajectories** — the same way VCR/nock gave web apps reliable HTTP tests.
 
-- **Record once** — point your agent's `BASE_URL` at the local proxy; every LLM call and tool call is persisted to a JSONL cassette.
+- **Record once** — point your agent's `BASE_URL` at the local proxy; every LLM call is persisted to a JSONL cassette with redacted secrets.
 - **Replay offline** — subsequent runs return recorded responses by request hash. No API keys, no tokens, no flakiness.
 - **Assert trajectories** — declare tool call order, arguments, final answer, token budgets, and forbidden tools in YAML.
-- **CI-ready** — one binary, exit-code gating, GitHub Action included.
+- **CI-ready** — one binary, exit-code gating, console/JSON/Markdown reporters, GitHub Actions included.
 
 ## 30-second demo
 
@@ -30,6 +31,7 @@ cases:
     cassette: ./cassettes/weather.jsonl
     assertions:
       - { kind: tool.called, name: get_weather }
+      - { kind: tool.args, name: get_weather, jsonPath: $.city, equals: Xiamen }
       - { kind: answer.contains, text: sunny }
       - { kind: budget.maxTokens, value: 2000 }
       - { kind: forbid.tool, name: execute_shell }
@@ -42,12 +44,132 @@ npx traceplay test suite.yaml
 ```
 ● fetches weather and answers
   [PASS] tool.called — tool "get_weather" called 1 time(s)
+  [PASS] tool.args — tool "get_weather" args at $.city equals "Xiamen"
   [PASS] answer.contains — answer contains "sunny"
   [PASS] budget.maxTokens — used 144 tokens, budget 2000
   [PASS] forbid.tool — forbidden tool "execute_shell" not called
 
-4 passed, 0 failed, 0 scaffolded (TODO)
+5 passed, 0 failed, 0 scaffolded (TODO)
 ```
+
+## Installation
+
+```bash
+npm install -g traceplay
+# or run without installing
+npx traceplay --help
+```
+
+Requires Node ≥ 20.
+
+## Commands
+
+### `traceplay record`
+
+Start a recording proxy. Point your agent's `BASE_URL` at `http://localhost:<port>`.
+
+```bash
+traceplay record [--port 8123] [--upstream https://api.openai.com/v1] [--out cassette.jsonl] [--project name] [--no-redact]
+```
+
+- `--port`: local proxy port (default 8123)
+- `--upstream`: real LLM provider URL (default OpenAI)
+- `--out`: cassette output path (default `cassette.jsonl`)
+- `--project`: project name stored in cassette metadata
+- `--no-redact`: disable secret redaction (not recommended)
+
+Supports OpenAI-compatible `/chat/completions` and Anthropic `/v1/messages` endpoints. Authorization headers and secret body fields are redacted before persistence.
+
+### `traceplay replay`
+
+Start an offline replay server from a cassette. Incoming requests are matched by hash; on a hit, the recorded response is returned exactly.
+
+```bash
+traceplay replay --cassette cassette.jsonl [--port 8124]
+```
+
+- `--cassette`: path to a recorded cassette (required)
+- `--port`: local server port (default 8124)
+
+Unmatched requests return 404 with a hint to re-record. No network calls are ever made.
+
+### `traceplay test`
+
+Run a test suite against one or more cassettes.
+
+```bash
+traceplay test suite.yaml [--format console|json|markdown] [--output report.md]
+```
+
+- `suite.yaml|suite.json`: test suite file (required)
+- `--format`: output format (default `console`)
+- `--output`: write report to file instead of stdout
+
+Exit code 0 = all pass, 1 = any failure, 2 = usage error.
+
+### `traceplay init`
+
+Scaffold a new traceplay project in a directory.
+
+```bash
+traceplay init [dir]
+```
+
+Creates `suite.yaml`, `cassettes/`, and appends traceplay entries to `.gitignore`.
+
+## Assertions reference
+
+| Kind | Checks | Example |
+|---|---|---|
+| `tool.called` | tool invoked (optionally exact times) | `{ kind: tool.called, name: get_weather, times: 1 }` |
+| `tool.order` | tools invoked in given subsequence | `{ kind: tool.order, names: [search, summarize] }` |
+| `tool.args` | JSONPath match on tool arguments | `{ kind: tool.args, name: get_weather, jsonPath: $.city, equals: Xiamen }` |
+| `forbid.tool` | tool never invoked | `{ kind: forbid.tool, name: execute_shell }` |
+| `answer.contains` | final answer contains text | `{ kind: answer.contains, text: "sunny" }` |
+| `answer.matches` | final answer matches regex | `{ kind: answer.matches, regex: "\\d+C" }` |
+| `answer.judge` | LLM-as-judge with rubric (cached) | `{ kind: answer.judge, rubric: "mentions temperature" }` |
+| `budget.maxTokens` | total token usage ≤ value | `{ kind: budget.maxTokens, value: 2000 }` |
+| `budget.maxSteps` | number of LLM requests ≤ value | `{ kind: budget.maxSteps, value: 5 }` |
+
+`tool.args` supports `equals` (exact JSON match) or `matches` (regex). `answer.judge` requires `TRACEPLAY_JUDGE_API_KEY` and caches verdicts to `.traceplay/judge-cache/` for deterministic reruns; without a key it is marked `todo`.
+
+## Reporters
+
+- **console** (default): human-readable pass/fail output
+- **json**: structured `TestReport` for programmatic consumption
+- **markdown**: PR-comment-ready table with pass/fail icons
+
+```bash
+traceplay test suite.yaml --format markdown --output pr-report.md
+```
+
+## Testing Agent Skills
+
+traceplay can generate test cassettes for Agent Skills (SKILL.md) using a mock agent runtime:
+
+```typescript
+import { runSkill } from 'traceplay/src/skills/runner.js';
+import { generateSkillSuite } from 'traceplay/src/skills/adapter.js';
+
+// Run a skill once and produce a cassette
+await runSkill({
+  skillPath: './skills/code-review/SKILL.md',
+  userMessage: 'review src/index.ts',
+  outPath: './cassettes/code-review.jsonl',
+});
+
+// Generate a full test suite from multiple test inputs
+await generateSkillSuite({
+  skillPath: './skills/code-review/SKILL.md',
+  outDir: './skill-tests',
+  inputs: [
+    { name: 'finds-bugs', userMessage: 'review this buggy file', assertions: [{ kind: 'answer.contains', text: 'bug' }] },
+    { name: 'stays-in-budget', userMessage: 'review large file', assertions: [{ kind: 'budget.maxTokens', value: 500 }] },
+  ],
+});
+```
+
+For real skill testing against your actual agent runtime, record with `traceplay record` instead.
 
 ## How it works
 
@@ -63,44 +185,67 @@ your agent ──BASE_URL──► traceplay record ──► LLM provider
      match by requestHash             YAML assertions → exit code
 ```
 
-A **cassette** is JSONL: line 0 is metadata, every subsequent line is one `TraceEvent` (`user.message`, `llm.request`, `llm.response`, `tool.call`, `tool.result`, `agent.error`). The core data model is in [`src/types.ts`](./src/types.ts) and is frozen for M1.
+A **cassette** is JSONL: line 0 is metadata, every subsequent line is one `TraceEvent` (`user.message`, `llm.request`, `llm.response`, `tool.call`, `tool.result`, `agent.error`). The replayer matches incoming requests by `sha256(canonicalized request body)` and returns the corresponding recorded `llm.response` (raw body + status + headers).
 
-## Assertions reference
+## Project structure
 
-| Kind | Checks | Status |
-|---|---|---|
-| `tool.called` | tool invoked (optionally exact times) | ✅ M0 |
-| `tool.order` | tools invoked in given subsequence | ✅ M0 |
-| `forbid.tool` | tool never invoked | ✅ M0 |
-| `answer.contains` / `answer.matches` | final answer text | ✅ M0 |
-| `budget.maxTokens` / `budget.maxSteps` | cost & step budgets | ✅ M0 |
-| `tool.args` | JSONPath match on tool arguments | 🚧 M3 |
-| `answer.judge` | LLM-as-judge with cached verdicts | 🚧 M3 |
+```
+src/
+├── cli.ts                  # entry point, command routing
+├── types.ts                # core data model (frozen)
+├── core/
+│   ├── hash.ts             # canonicalization + sha256
+│   ├── redact.ts           # secret redaction
+│   └── jsonpath.ts         # minimal JSONPath evaluator
+├── cassette/
+│   ├── store.ts            # JSONL read/write
+│   └── normalize.ts        # provider request/response normalization
+├── recorder/
+│   ├── proxy.ts            # recording HTTP proxy
+│   └── forward.ts          # upstream request forwarding
+├── replayer/
+│   ├── server.ts           # offline replay server
+│   └── matcher.ts          # request hash matching
+├── assert/
+│   ├── engine.ts           # assertion dispatcher
+│   ├── judge.ts            # LLM-as-judge with disk cache
+│   └── matchers/
+│       ├── tool.ts         # tool.called/order/args/forbid
+│       ├── answer.ts       # answer.contains/matches/judge
+│       └── budget.ts       # budget.maxTokens/maxSteps
+├── report/
+│   ├── console.ts          # console reporter
+│   ├── json.ts             # JSON reporter
+│   └── markdown.ts         # Markdown reporter
+├── commands/
+│   ├── record.ts           # `traceplay record`
+│   ├── replay.ts           # `traceplay replay`
+│   ├── test.ts             # `traceplay test`
+│   └── init.ts             # `traceplay init`
+└── skills/
+    ├── runner.ts           # mock agent skill runner
+    └── adapter.ts          # generate test suites from skills
+```
 
 ## Comparison
 
 | | traceplay | skillkit / skilllint | Langfuse / Phoenix |
 |---|---|---|---|
-| What it tests | Full multi-step trajectories | Skill markdown structure + subprocess stdout | Production traces |
+| What it tests | Full multi-step trajectories | Skill markdown structure | Production traces |
 | Replay | Offline, deterministic, zero tokens | No | No |
 | Language | Any (HTTP-boundary proxy) | TS/Python | SDK-specific |
 | Where it runs | Local + CI | Local + CI | Hosted/self-hosted platform |
+| Assertions | 9 types (tools, answer, budget) | Lint rules | Metrics & dashboards |
 | Best for | Regression-gating agent behavior | Linting skill packages | Observability & debugging |
-
-## Roadmap
-
-See [ROADMAP.md](./ROADMAP.md). Current milestone: **M0 — skeleton + offline `test` against hand-written cassettes.** Up next: M1 recording proxy, M2 replay server, M3 full assertions, M4 GitHub Action + `init`, M5 Agent Skills adapter + launch.
 
 ## Development
 
 ```bash
 npm install
 npm run build
-npm test
-npm run dev test examples/demo/suite.example.yaml
+npm test          # 39 tests, including record→replay integration
+npm run dev -- test examples/demo/suite.example.yaml
 ```
-
-Requires Node ≥ 20.
 
 ## License
 

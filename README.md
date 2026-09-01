@@ -5,7 +5,7 @@
 [![CI](https://github.com/<your-handle>/traceplay/actions/workflows/ci.yml/badge.svg)](https://github.com/<your-handle>/traceplay/actions)
 [![npm version](https://img.shields.io/npm/v/traceplay.svg)](https://www.npmjs.com/package/traceplay)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
-[![tests](https://img.shields.io/badge/tests-70%20passing-brightgreen)]()
+[![tests](https://img.shields.io/badge/tests-84%20passing-brightgreen)]()
 
 ## Why
 

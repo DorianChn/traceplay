@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-09-01 — robustness & release-readiness pass
+
+- **Friendly errors for bad input** — corrupted cassette lines now report the
+  exact line number and file; missing suite files, missing `cases`/`cassette`/`assertions`,
+  and malformed YAML/JSON all produce clear one-line messages instead of raw
+  stack traces.
+- **UTF-8 BOM tolerance** — cassettes and suites saved by Windows editors
+  (which prepend a BOM) now load correctly.
+- **Input validation** — unknown `--format` values exit 2 with the list of
+  valid formats; invalid `--port` values (non-numeric, out of 1-65535 range)
+  are rejected before the server starts.
+- **Cleaner CLI errors** — user-facing errors print a single `error: ...`
+  line; set `TRACEPLAY_DEBUG=1` for a full stack trace.
+- **npm release readiness** — added `prepublishOnly` (build + test gate),
+  `repository`/`homepage`/`bugs` metadata, and a `Makefile` with
+  common tasks (`make check` runs typecheck + build + test).
+- **Tests** — added boundary coverage for corrupted/empty/BOM cassettes,
+  suite validation, unknown formats, and port parsing.
+
 ## 2026-09-01 — project maturity pass
 
 - **Open-source scaffolding** — added `.editorconfig`, `.gitattributes`,

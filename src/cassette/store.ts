@@ -38,12 +38,24 @@ export async function appendEvent(path: string, event: TraceEvent): Promise<void
 }
 
 export async function readCassette(path: string): Promise<Cassette> {
-  const raw = await fs.readFile(path, 'utf8');
+  let raw: string;
+  try {
+    raw = await fs.readFile(path, 'utf8');
+  } catch (err) {
+    throw new Error(`Cannot read cassette "${path}": ${(err as Error).message}`);
+  }
+  // Strip a UTF-8 BOM if present (common in files saved by Windows editors).
+  if (raw.charCodeAt(0) === 0xfeff) raw = raw.slice(1);
   const lines = raw.split(/\r?\n/).filter((l) => l.trim().length > 0);
   if (lines.length === 0) {
     throw new Error(`Empty cassette: ${path}`);
   }
-  const header = JSON.parse(lines[0]) as Record<string, unknown>;
+  let header: Record<string, unknown>;
+  try {
+    header = JSON.parse(lines[0]) as Record<string, unknown>;
+  } catch (err) {
+    throw new Error(`Invalid cassette header on line 1 of ${path}: ${(err as Error).message}`);
+  }
   if (header.cassette !== MARKER) {
     throw new Error(`Not a traceplay cassette (missing marker): ${path}`);
   }
@@ -53,6 +65,13 @@ export async function readCassette(path: string): Promise<Cassette> {
     providerBaseUrl: typeof header.providerBaseUrl === 'string' ? header.providerBaseUrl : undefined,
     project: typeof header.project === 'string' ? header.project : undefined,
   };
-  const events = lines.slice(1).map((l) => JSON.parse(l) as TraceEvent);
+  const events: TraceEvent[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    try {
+      events.push(JSON.parse(lines[i]) as TraceEvent);
+    } catch (err) {
+      throw new Error(`Invalid JSON on cassette line ${i + 1} of ${path}: ${(err as Error).message}`);
+    }
+  }
   return { version: 1, meta, events };
 }

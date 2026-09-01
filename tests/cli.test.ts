@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { promises as fs } from 'node:fs';
 import { runTest } from '../src/commands/test.js';
 import { runInit } from '../src/commands/init.js';
-import { parseArgs } from '../src/cli.js';
+import { parseArgs, parsePort } from '../src/cli.js';
 
 const EXAMPLE_SUITE = fileURLToPath(new URL('../examples/demo/suite.example.yaml', import.meta.url));
 
@@ -81,5 +81,23 @@ describe('cli/parseArgs', () => {
   it('treats a flag with no value as a boolean', () => {
     const { flags } = parseArgs(['--fuzzy', '--verbose']);
     expect(flags).toEqual({ fuzzy: true, verbose: true });
+  });
+});
+
+describe('cli/parsePort', () => {
+  it('returns undefined when no value is given', () => {
+    expect(parsePort(undefined)).toBeUndefined();
+    expect(parsePort(true)).toBeUndefined();
+  });
+
+  it('parses a valid integer port', () => {
+    expect(parsePort('8123')).toBe(8123);
+  });
+
+  it('rejects non-numeric, out-of-range, and non-integer ports', () => {
+    expect(() => parsePort('abc')).toThrow(/invalid port/);
+    expect(() => parsePort('0')).toThrow(/invalid port/);
+    expect(() => parsePort('70000')).toThrow(/invalid port/);
+    expect(() => parsePort('80.5')).toThrow(/invalid port/);
   });
 });

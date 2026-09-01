@@ -1,0 +1,12 @@
+suite: streaming-demo
+description: Example suite using a streaming (SSE) cassette. The full content is captured during recording.
+cases:
+  - name: streaming response captured full content
+    cassette: ./cassette.streaming.jsonl
+    assertions:
+      - kind: answer.contains
+        text: keystrokes
+      - kind: answer.contains
+        text: Ship
+      - kind: budget.maxTokens
+        value: 100

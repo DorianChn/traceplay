@@ -1,0 +1,4 @@
+{"cassette":"traceplay","version":1,"recordedAt":"2026-09-01T00:00:00.000Z","redacted":true,"providerBaseUrl":"https://api.anthropic.com/v1","project":"anthropic-demo"}
+{"id":"a1","seq":0,"at":"2026-09-01T00:00:00.000Z","type":"user.message","content":"Explain quantum entanglement in one sentence."}
+{"id":"a2","seq":1,"at":"2026-09-01T00:00:01.000Z","type":"llm.request","provider":"anthropic","model":"claude-3-5-sonnet","system":"You are a concise physics tutor.","messages":[{"role":"user","content":"Explain quantum entanglement in one sentence."}],"requestHash":"hash-anthropic-1"}
+{"id":"a3","seq":2,"at":"2026-09-01T00:00:02.000Z","type":"llm.response","requestId":"a2","status":200,"output":{"content":[{"type":"text","text":"Quantum entanglement is a phenomenon where two particles become correlated such that measuring one instantly determines the state of the other, regardless of the distance between them."}]},"usage":{"promptTokens":45,"completionTokens":32}}

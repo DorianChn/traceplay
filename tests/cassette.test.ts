@@ -37,6 +37,49 @@ describe('cassette/store', () => {
     const header = serializeHeader({ recordedAt: now, redacted: true });
     expect(header).toContain('"cassette":"traceplay"');
   });
+
+  it('reports line number for a corrupted event line', async () => {
+    const path = join(tmpdir(), `tp-corrupt-${Date.now()}.jsonl`);
+    const { writeFile } = await import('node:fs/promises');
+    const content = [
+      JSON.stringify({ cassette: 'traceplay', version: 1 }),
+      JSON.stringify({ id: 'e1', seq: 0, type: 'user.message', content: 'ok' }),
+      '{ this is not valid json',
+    ].join('\n');
+    await writeFile(path, content, 'utf8');
+    await expect(readCassette(path)).rejects.toThrow(/line 3/);
+  });
+
+  it('wraps a missing-file error with the cassette path', async () => {
+    const path = join(tmpdir(), `tp-missing-${Date.now()}-nope.jsonl`);
+    await expect(readCassette(path)).rejects.toThrow(/Cannot read cassette/);
+  });
+
+  it('rejects an empty cassette', async () => {
+    const path = join(tmpdir(), `tp-empty-${Date.now()}.jsonl`);
+    const { writeFile } = await import('node:fs/promises');
+    await writeFile(path, '   \n  \n', 'utf8');
+    await expect(readCassette(path)).rejects.toThrow(/Empty cassette/);
+  });
+
+  it('reports a malformed header line', async () => {
+    const path = join(tmpdir(), `tp-badhdr-${Date.now()}.jsonl`);
+    const { writeFile } = await import('node:fs/promises');
+    await writeFile(path, 'not-json-at-all\n', 'utf8');
+    await expect(readCassette(path)).rejects.toThrow(/Invalid cassette header on line 1/);
+  });
+
+  it('tolerates a leading UTF-8 BOM', async () => {
+    const path = join(tmpdir(), `tp-bom-${Date.now()}.jsonl`);
+    const { writeFile } = await import('node:fs/promises');
+    const header = JSON.stringify({ cassette: 'traceplay', version: 1 });
+    const event = JSON.stringify({ id: 'e1', seq: 0, at: now, type: 'user.message', content: 'hi' });
+    // Prepend the BOM code point U+FEFF.
+    await writeFile(path, '\uFEFF' + header + '\n' + event + '\n', 'utf8');
+    const cassette = await readCassette(path);
+    expect(cassette.events).toHaveLength(1);
+    expect(cassette.events[0].type).toBe('user.message');
+  });
 });
 
 describe('cassette/normalize', () => {

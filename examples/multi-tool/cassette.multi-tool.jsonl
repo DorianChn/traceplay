@@ -1,0 +1,8 @@
+{"cassette":"traceplay","version":1,"recordedAt":"2026-09-01T00:00:00.000Z","redacted":true,"providerBaseUrl":"https://api.openai.com/v1","project":"multi-tool-demo"}
+{"id":"m1","seq":0,"at":"2026-09-01T00:00:00.000Z","type":"user.message","content":"What's the weather in Xiamen and the current BTC price?"}
+{"id":"m2","seq":1,"at":"2026-09-01T00:00:01.000Z","type":"llm.request","provider":"openai-compatible","model":"gpt-4o","messages":[{"role":"user","content":"What's the weather in Xiamen and the current BTC price?"}],"requestHash":"hash-multi-1"}
+{"id":"m3","seq":2,"at":"2026-09-01T00:00:02.000Z","type":"tool.call","name":"get_weather","arguments":{"city":"Xiamen"}}
+{"id":"m4","seq":3,"at":"2026-09-01T00:00:03.000Z","type":"tool.result","callId":"m3","output":"sunny, 31C, humidity 65%"}
+{"id":"m5","seq":4,"at":"2026-09-01T00:00:04.000Z","type":"tool.call","name":"get_crypto_price","arguments":{"symbol":"BTC","currency":"USD"}}
+{"id":"m6","seq":5,"at":"2026-09-01T00:00:05.000Z","type":"tool.result","callId":"m5","output":"BTC: $67,234.50 (24h: +2.3%)"}
+{"id":"m7","seq":6,"at":"2026-09-01T00:00:06.000Z","type":"llm.response","requestId":"m2","status":200,"output":{"choices":[{"message":{"content":"Xiamen is sunny, 31C with 65% humidity. BTC is currently at $67,234.50, up 2.3% in the last 24 hours."}}]},"usage":{"promptTokens":210,"completionTokens":42}}

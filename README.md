@@ -5,7 +5,7 @@
 [![CI](https://github.com/<your-handle>/traceplay/actions/workflows/ci.yml/badge.svg)](https://github.com/<your-handle>/traceplay/actions)
 [![npm version](https://img.shields.io/npm/v/traceplay.svg)](https://www.npmjs.com/package/traceplay)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
-[![tests](https://img.shields.io/badge/tests-39%20passing-brightgreen)]()
+[![tests](https://img.shields.io/badge/tests-60%20passing-brightgreen)]()
 
 ## Why
 
@@ -51,6 +51,19 @@ npx traceplay test suite.yaml
 
 5 passed, 0 failed, 0 scaffolded (TODO)
 ```
+
+## More examples
+
+The `examples/` directory ships with ready-to-run suites covering common
+scenarios. Each has a cassette + suite YAML — run them with
+`traceplay test examples/<name>/suite.*.yaml`.
+
+| Example | What it demonstrates |
+| --- | --- |
+| `demo/` | Single tool call + answer + budget assertions (the 30-second demo) |
+| `anthropic/` | Anthropic-format cassette (`content` blocks, `system` field) — proves provider-agnostic replay |
+| `streaming/` | SSE streaming response — full content captured during recording, asserted offline |
+| `multi-tool/` | Agent calling two tools in order, with `tool.args` JSONPath checks and `forbid.tool` guards |
 
 ## Installation
 
@@ -152,6 +165,8 @@ Creates `suite.yaml`, `cassettes/`, and appends traceplay entries to `.gitignore
 
 `tool.args` supports `equals` (exact JSON match) or `matches` (regex). `answer.judge` requires `TRACEPLAY_JUDGE_API_KEY` and caches verdicts to `.traceplay/judge-cache/` for deterministic reruns; without a key it is marked `todo`.
 
+Full field-by-field reference with troubleshooting: [docs/assertions.md](docs/assertions.md)
+
 ## Reporters
 
 - **console** (default): human-readable pass/fail output
@@ -205,6 +220,8 @@ your agent ──BASE_URL──► traceplay record ──► LLM provider
 ```
 
 A **cassette** is JSONL: line 0 is metadata, every subsequent line is one `TraceEvent` (`user.message`, `llm.request`, `llm.response`, `tool.call`, `tool.result`, `agent.error`). The replayer matches incoming requests by `sha256(canonicalized request body)` and returns the corresponding recorded `llm.response` (raw body + status + headers).
+
+Full cassette schema reference: [docs/cassette-format.md](docs/cassette-format.md)
 
 ## Project structure
 

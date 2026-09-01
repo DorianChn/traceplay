@@ -20,7 +20,7 @@ Observability & programmability: UI, diff, SDK, tool-call recording.
 - [x] **Cassette diff** (`traceplay diff`) — added/removed requests, changed responses, tool changes
 - [x] **TypeScript SDK** — public API in `src/index.ts` (CLI is a thin wrapper)
 - [x] **Tool-call recording** — `POST /__traceplay/tool.call|result` reporting endpoints
-- 62 tests passing
+- 69 tests passing
 
 ## v0.4 — Planned
 - [ ] **Edge-case generation**: `traceplay generate` — property-based test

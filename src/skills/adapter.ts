@@ -38,12 +38,17 @@ export async function generateSkillSuite(options: GenerateSuiteOptions): Promise
       mockResponse: input.mockResponse,
     });
 
-    const assertions =
-      input.assertions ??
-      ([
-        { kind: 'answer.contains', text: input.userMessage.slice(0, Math.min(20, input.userMessage.length)) },
-        { kind: 'budget.maxTokens', value: 500 },
-      ] as Assertion[]);
+    const containsText = input.userMessage.trim();
+    const assertions: Assertion[] = input.assertions ?? (containsText.length > 0
+      ? [
+          { kind: 'answer.contains', text: containsText.slice(0, Math.min(20, containsText.length)) },
+          { kind: 'budget.maxTokens', value: 500 },
+        ]
+      : [
+          // Empty/whitespace input: a content assertion would be vacuous
+          // (any string contains ""), so only enforce the resource budget.
+          { kind: 'budget.maxTokens', value: 500 },
+        ]);
 
     cases.push({
       name: input.name,

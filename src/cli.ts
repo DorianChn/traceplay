@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { pathToFileURL } from 'node:url';
 import { VERSION } from './version.js';
 import { runRecord } from './commands/record.js';
 import { runReplay } from './commands/replay.js';
@@ -26,12 +27,17 @@ interface ParsedArgs {
   flags: Record<string, string | boolean>;
 }
 
-function parseArgs(args: string[]): ParsedArgs {
+export function parseArgs(args: string[]): ParsedArgs {
   const positional: string[] = [];
   const flags: Record<string, string | boolean> = {};
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
     if (a.startsWith('--')) {
+      const eq = a.indexOf('=');
+      if (eq !== -1) {
+        flags[a.slice(2, eq)] = a.slice(eq + 1);
+        continue;
+      }
       const key = a.slice(2);
       const next = args[i + 1];
       if (next === undefined || next.startsWith('--')) {
@@ -139,9 +145,13 @@ async function main(): Promise<number> {
   }
 }
 
-main()
-  .then((code) => process.exit(code))
-  .catch((err) => {
-    console.error(err);
-    process.exit(1);
-  });
+// Run only when invoked directly as a CLI. Importing this module (from tests
+// or SDK consumers) must not start servers or process.exit.
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main()
+    .then((code) => process.exit(code))
+    .catch((err) => {
+      console.error(err);
+      process.exit(1);
+    });
+}

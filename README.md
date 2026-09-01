@@ -269,7 +269,7 @@ src/
 Drop a step into your workflow — no build setup needed:
 
 ```yaml
-- uses: traceplay/action@v0.2.0
+- uses: traceplay/action@v0.3.0
   with:
     suite: suite.yaml
     format: markdown   # console | json | markdown
@@ -287,7 +287,7 @@ Add the hook to your `.pre-commit-config.yaml` (or generate it with
 ```yaml
 repos:
   - repo: https://github.com/<your-handle>/traceplay
-    rev: v0.2.0
+    rev: v0.3.0
     hooks:
       - id: traceplay
         args: [suite.yaml]
@@ -333,7 +333,7 @@ const report = compareCassettes(a, b);
 ```bash
 npm install
 npm run build
-npm test          # 39 tests, including record→replay integration
+npm test          # 69 tests, including record→replay integration
 npm run dev -- test examples/demo/suite.example.yaml
 ```
 

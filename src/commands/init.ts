@@ -25,7 +25,7 @@ cassettes/local/
 const PRECOMMIT_CONFIG = `# traceplay + pre-commit: run agent regression tests before every commit
 repos:
   - repo: https://github.com/<your-handle>/traceplay
-    rev: v0.2.0
+    rev: v0.3.0
     hooks:
       - id: traceplay
         args: [suite.yaml]

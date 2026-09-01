@@ -21,6 +21,19 @@ interface ParsedArgs {
   flags: Record<string, string | boolean>;
 }
 
+const VALID_FORMATS = new Set(['console', 'json', 'markdown']);
+
+/** Parse a --port flag value, rejecting non-integers and out-of-range ports. */
+export function parsePort(value: string | boolean | undefined): number | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string') return undefined;
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 1 || n > 65535) {
+    throw new Error(`invalid port "${value}": expected an integer between 1 and 65535`);
+  }
+  return n;
+}
+
 export function parseArgs(args: string[]): ParsedArgs {
   const positional: string[] = [];
   const flags: Record<string, string | boolean> = {};
@@ -59,7 +72,7 @@ async function main(): Promise<number> {
 
     case 'record':
       return runRecord({
-        port: typeof flags.port === 'string' ? Number(flags.port) : undefined,
+        port: parsePort(flags.port),
         upstream: typeof flags.upstream === 'string' ? flags.upstream : undefined,
         out: typeof flags.out === 'string' ? flags.out : undefined,
         project: typeof flags.project === 'string' ? flags.project : undefined,
@@ -74,7 +87,7 @@ async function main(): Promise<number> {
       }
       return runReplay({
         cassette,
-        port: typeof flags.port === 'string' ? Number(flags.port) : undefined,
+        port: parsePort(flags.port),
       });
     }
 
@@ -84,10 +97,14 @@ async function main(): Promise<number> {
         console.error('Usage: traceplay test <suite.yaml> [--format ...] [--output ...]');
         return 2;
       }
-      const format = (typeof flags.format === 'string' ? flags.format : undefined) as ReportFormat | undefined;
+      const format = typeof flags.format === 'string' ? flags.format : undefined;
+      if (format && !VALID_FORMATS.has(format)) {
+        console.error(`Unknown format "${format}". Expected one of: console, json, markdown`);
+        return 2;
+      }
       return runTest({
         suite,
-        format,
+        format: format as ReportFormat | undefined,
         output: typeof flags.output === 'string' ? flags.output : undefined,
       });
     }
@@ -113,8 +130,14 @@ async function main(): Promise<number> {
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   main()
     .then((code) => process.exit(code))
-    .catch((err) => {
-      console.error(err);
+    .catch((err: unknown) => {
+      // User-facing errors print a clean one-line message. Set TRACEPLAY_DEBUG=1
+      // for the full stack trace when diagnosing an internal bug.
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`error: ${message}`);
+      if (process.env.TRACEPLAY_DEBUG && err instanceof Error && err.stack) {
+        console.error(err.stack);
+      }
       process.exit(1);
     });
 }

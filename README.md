@@ -7,14 +7,28 @@
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![tests](https://img.shields.io/badge/tests-101%20passing-brightgreen)]()
 
-## Why
+## Why you need this
 
-AI agents fail silently. A prompt edit, a model upgrade, or a tool schema change can make an agent "succeed" while doing the wrong thing. Existing tools either watch production traces (Langfuse, Phoenix) or lint skill markdown (skillkit, skilllint). **traceplay gives you a local, deterministic, language-agnostic regression suite for multi-step agent trajectories** — the same way VCR/nock gave web apps reliable HTTP tests.
+**Testing an AI agent is broken three ways:**
 
-- **Record once** — point your agent's `BASE_URL` at the local proxy; every LLM call is persisted to a JSONL cassette with redacted secrets.
-- **Replay offline** — subsequent runs return recorded responses by request hash. No API keys, no tokens, no flakiness.
-- **Assert trajectories** — declare tool call order, arguments, final answer, token budgets, and forbidden tools in YAML.
-- **CI-ready** — one binary, exit-code gating, console/JSON/Markdown reporters, GitHub Actions included.
+- **Non-deterministic** — the same prompt can return different answers, so you can't hard-code the expected output.
+- **Expensive & flaky** — every test run hits the real API: it burns tokens, needs network, and flakes.
+- **Multi-step and opaque** — an agent can print the *right* final answer while calling the wrong tool, passing bad arguments, or blowing the token budget. Eyeballing the last line misses all of it.
+
+traceplay fixes this the same way VCR/nock fixed flaky HTTP tests — **record one real run, replay it offline for free, and assert the whole trajectory.** It is local, deterministic, and language-agnostic (it sits at the HTTP boundary, so agents written in Python, Go, or TypeScript all work). Observability tools such as Langfuse and Phoenix watch production traces, and skill linters check markdown — neither gives you an offline regression suite.
+
+| | Without traceplay | With traceplay |
+| --- | --- | --- |
+| After editing a prompt | Re-chat manually, watch every step, pay API fees | `traceplay test suite.yaml` in seconds, offline |
+| Responses | Flaky — output drifts from run to run | Identical recorded responses, every time |
+| Cost per run | Tokens on every run | $0 after the first recording |
+| What's verified | The final answer, by eye | Tools · args · call order · answer · token/step budget · forbidden tools |
+| In CI | Needs API keys + network, flakes | Exit-code gate; no keys, no network |
+
+- **Record once** — point your agent's `BASE_URL` at the local proxy; every LLM call is persisted to a JSONL cassette with secrets redacted.
+- **Replay offline** — later runs return recorded responses by request hash: no API keys, no tokens, no flakiness.
+- **Assert trajectories** — declare tool order/arguments, final answer, token budgets, and forbidden tools in YAML.
+- **CI-ready** — one binary, exit-code gating, console/JSON/Markdown reporters, and a GitHub Actions workflow.
 
 ## 30-second demo
 

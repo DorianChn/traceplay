@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-01 — project maturity pass
+
+- **Open-source scaffolding** — added `.editorconfig`, `.gitattributes`,
+  `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, GitHub issue
+  templates (bug report + feature request), and a pull request template.
+- **New examples** — added ready-to-run suites for Anthropic-format
+  cassettes, SSE streaming responses, and multi-tool agent trajectories
+  (see `examples/anthropic/`, `examples/streaming/`,
+  `examples/multi-tool/`).
+- **Documentation** — added `docs/assertions.md` (field-by-field assertion
+  reference with troubleshooting) and `docs/cassette-format.md` (full JSONL
+  schema reference); linked both from the README.
+- **Bug fix** — `tool.args` assertions with a missing or empty `jsonPath`
+  field no longer crash the test runner; they now fail with a clear message.
+  Regression test added.
+- **README** — added a "More examples" section and cross-links to the new
+  docs; updated the tests badge.
+
 ## 2026-09-01 — hardening pass
 
 - **CLI entry guard** — `cli.ts` only runs `main()` when executed directly

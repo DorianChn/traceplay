@@ -6,6 +6,7 @@
  */
 
 export function jsonPath(root: unknown, path: string): unknown[] {
+  if (typeof path !== 'string') return [];
   let p = path.trim();
   if (p.startsWith('$')) p = p.slice(1);
   if (p.length === 0) return [root];

@@ -45,6 +45,13 @@ export function checkToolOrder(events: TraceEvent[], assertion: Extract<Assertio
 }
 
 export function checkToolArgs(events: TraceEvent[], assertion: Extract<Assertion, { kind: 'tool.args' }>): AssertResult {
+  if (typeof assertion.jsonPath !== 'string' || assertion.jsonPath.length === 0) {
+    return {
+      status: 'fail',
+      assertion,
+      message: 'tool.args assertion is missing a valid "jsonPath" field (e.g. "$.city")',
+    };
+  }
   const calls = events.filter(
     (e): e is ToolCallEvent => e.type === 'tool.call' && e.name === assertion.name,
   );

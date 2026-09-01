@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 import { promises as fs } from 'node:fs';
 import { runTest } from '../src/commands/test.js';
 import { runInit } from '../src/commands/init.js';
+import { parseArgs } from '../src/cli.js';
 
-const EXAMPLE_SUITE = join('C:', 'Users', '36712', 'Desktop', 'traceplay', 'examples', 'demo', 'suite.example.yaml');
+const EXAMPLE_SUITE = fileURLToPath(new URL('../examples/demo/suite.example.yaml', import.meta.url));
 
 describe('commands/test', () => {
   it('runs the example suite and exits 0', async () => {
@@ -60,5 +62,24 @@ describe('commands/init', () => {
 
     // cleanup
     await fs.rm(dir, { recursive: true, force: true }).catch(() => undefined);
+  });
+});
+
+describe('cli/parseArgs', () => {
+  it('parses flags with space-separated values and boolean flags', () => {
+    const { positional, flags } = parseArgs(['suite.yaml', '--format', 'json', '--fuzzy']);
+    expect(positional).toEqual(['suite.yaml']);
+    expect(flags).toEqual({ format: 'json', fuzzy: true });
+  });
+
+  it('parses --flag=value syntax', () => {
+    const { positional, flags } = parseArgs(['--port=9999', '--format=json', 'x']);
+    expect(positional).toEqual(['x']);
+    expect(flags).toEqual({ port: '9999', format: 'json' });
+  });
+
+  it('treats a flag with no value as a boolean', () => {
+    const { flags } = parseArgs(['--fuzzy', '--verbose']);
+    expect(flags).toEqual({ fuzzy: true, verbose: true });
   });
 });

@@ -2,7 +2,7 @@
 
 ## v0.1.0 — ✅ Complete (2026-09-01)
 
-All core milestones delivered and verified (39 tests passing, including end-to-end record→replay integration).
+All core milestones delivered and verified (44 tests passing, including end-to-end record→replay integration).
 
 ### M0 — Skeleton + offline test
 - [x] Core data model (`TraceEvent`, `Cassette`, `Assertion`)

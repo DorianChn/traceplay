@@ -1,5 +1,6 @@
 import http from 'node:http';
 import https from 'node:https';
+import { gunzipSync, inflateSync } from 'node:zlib';
 import { URL } from 'node:url';
 
 export interface ForwardResult {
@@ -42,13 +43,36 @@ export function forwardRequest(
         const chunks: Buffer[] = [];
         res.on('data', (chunk) => chunks.push(chunk));
         res.on('end', () => {
-          const responseBody = Buffer.concat(chunks).toString('utf8');
+          const raw = Buffer.concat(chunks);
+          const enc = (res.headers['content-encoding'] || '').toLowerCase();
+          let responseBuffer = raw;
+          if (enc === 'gzip') {
+            try {
+              responseBuffer = gunzipSync(raw);
+            } catch {
+              // keep raw bytes if decompression fails
+            }
+          } else if (enc === 'deflate') {
+            try {
+              responseBuffer = inflateSync(raw);
+            } catch {
+              // keep raw bytes if decompression fails
+            }
+          }
           const responseHeaders: Record<string, string> = {};
           for (const [key, value] of Object.entries(res.headers)) {
             if (typeof value === 'string') responseHeaders[key] = value;
             else if (Array.isArray(value)) responseHeaders[key] = value.join(', ');
           }
-          resolve({ status: res.statusCode || 502, headers: responseHeaders, body: responseBody });
+          // Replay serves the decompressed plain text, so never keep the
+          // encoding header or a stale content-length.
+          if (enc) delete responseHeaders['content-encoding'];
+          delete responseHeaders['content-length'];
+          resolve({
+            status: res.statusCode || 502,
+            headers: responseHeaders,
+            body: responseBuffer.toString('utf8'),
+          });
         });
       },
     );

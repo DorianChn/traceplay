@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import http from 'node:http';
+import { gzipSync } from 'node:zlib';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { promises as fs } from 'node:fs';
@@ -125,6 +126,91 @@ describe('integration: record -> cassette -> replay', () => {
     expect(miss.status).toBe(404);
 
     // cleanup cassette
+    await fs.unlink(cassettePath).catch(() => undefined);
+  }, 15000);
+
+  it('preserves non-200 upstream status codes through record and replay', async () => {
+    const upstreamPort = await getFreePort();
+    const recorderPort = await getFreePort();
+    const replayerPort = await getFreePort();
+    const cassettePath = join(tmpdir(), `tp-int-${Date.now()}-${Math.random().toString(36).slice(2)}.jsonl`);
+
+    const upstream = http.createServer((req, res) => {
+      res.statusCode = 401;
+      res.setHeader('content-type', 'application/json');
+      res.end(JSON.stringify({ error: { message: 'Unauthorized', type: 'invalid_request_error' } }));
+    });
+    await new Promise<void>((resolve) => upstream.listen(upstreamPort, resolve));
+    handles.push(upstream);
+
+    const recorder = await startRecorder({
+      port: recorderPort,
+      upstream: `http://localhost:${upstreamPort}`,
+      cassettePath,
+      redact: true,
+    });
+    handles.push(recorder);
+
+    const requestBody = { model: 'gpt-mock', messages: [{ role: 'user', content: 'hi' }] };
+    const recorded = await postJson(recorderPort, '/v1/chat/completions', requestBody);
+    expect(recorded.status).toBe(401);
+
+    const cassette = await readCassette(cassettePath);
+    const resEvent = cassette.events.find((e) => e.type === 'llm.response');
+    expect((resEvent as { status: number }).status).toBe(401);
+
+    await recorder.close();
+    const replayer = await startReplayer({ port: replayerPort, cassettePath });
+    handles.push(replayer);
+    const replayed = await postJson(replayerPort, '/v1/chat/completions', requestBody);
+    expect(replayed.status).toBe(401);
+
+    await fs.unlink(cassettePath).catch(() => undefined);
+  }, 15000);
+
+  it('decompresses gzip-encoded upstream responses before recording', async () => {
+    const upstreamPort = await getFreePort();
+    const recorderPort = await getFreePort();
+    const replayerPort = await getFreePort();
+    const cassettePath = join(tmpdir(), `tp-gz-${Date.now()}-${Math.random().toString(36).slice(2)}.jsonl`);
+
+    const upstream = http.createServer((req, res) => {
+      res.statusCode = 200;
+      res.setHeader('content-type', 'application/json');
+      res.setHeader('content-encoding', 'gzip');
+      res.end(gzipSync(Buffer.from(MOCK_RESPONSE, 'utf8')));
+    });
+    await new Promise<void>((resolve) => upstream.listen(upstreamPort, resolve));
+    handles.push(upstream);
+
+    const recorder = await startRecorder({
+      port: recorderPort,
+      upstream: `http://localhost:${upstreamPort}`,
+      cassettePath,
+      redact: true,
+    });
+    handles.push(recorder);
+
+    const body = { model: 'gpt-mock', messages: [{ role: 'user', content: 'gzip test' }] };
+    const recorded = await postJson(recorderPort, '/v1/chat/completions', body);
+    expect(recorded.status).toBe(200);
+    expect(recorded.body).toBe(MOCK_RESPONSE);
+
+    const cassette = await readCassette(cassettePath);
+    const resEvent = cassette.events.find((e) => e.type === 'llm.response') as {
+      rawBody?: string;
+      headers?: Record<string, string>;
+    };
+    expect(resEvent.rawBody).toBe(MOCK_RESPONSE);
+    expect(resEvent.headers?.['content-encoding']).toBeUndefined();
+
+    await recorder.close();
+    const replayer = await startReplayer({ port: replayerPort, cassettePath });
+    handles.push(replayer);
+    const replayed = await postJson(replayerPort, '/v1/chat/completions', body);
+    expect(replayed.status).toBe(200);
+    expect(replayed.body).toBe(MOCK_RESPONSE);
+
     await fs.unlink(cassettePath).catch(() => undefined);
   }, 15000);
 });

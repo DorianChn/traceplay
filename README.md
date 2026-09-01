@@ -243,7 +243,7 @@ src/
 ```bash
 npm install
 npm run build
-npm test          # 39 tests, including record→replay integration
+npm test          # 44 tests, including record→replay integration
 npm run dev -- test examples/demo/suite.example.yaml
 ```
 

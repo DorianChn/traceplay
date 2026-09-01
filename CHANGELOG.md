@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-09-01 — hardening pass
+
+- **CLI entry guard** — `cli.ts` only runs `main()` when executed directly
+  (ESM `import.meta.url` check); importing it no longer starts servers or
+  calls `process.exit`.
+- **`--flag=value` syntax** — CLI flags accept `=` syntax (`--format=json`) in
+  addition to `--flag value`; `parseArgs` is exported and unit-tested.
+- **Faithful status codes** — the recorder no longer rewrites upstream
+  responses to `200`; non-200 responses are recorded and replayed with their
+  real status (regression test added).
+- **Gemini streaming** — SSE content/usage extraction now understands Gemini's
+  `candidates[].content.parts[].text` and `usageMetadata` (tests added).
+- **gzip/deflate responses** — upstream responses are transparently
+  decompressed before recording; `content-encoding` is dropped so replay
+  serves plain text.
+- **Vacuous assertions** — `generateSkillSuite` no longer emits
+  `answer.contains: ""` for empty inputs (would always pass).
+- **Consistency** — `package-lock.json` root version, pre-commit `rev`, and
+  GitHub Action `uses:` tag now match v0.2.0.
+- **Tests** — added `parseArgs`, Gemini stream, non-200 status and gzip
+  integration tests. Now **59 tests**, all passing.
+
+---
+
 ## v0.2.0 — Streaming, fuzzy matching, Gemini, inspection, CI & pre-commit
 
 **New capabilities**

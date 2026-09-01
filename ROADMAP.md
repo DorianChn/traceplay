@@ -17,7 +17,7 @@ Production realism: streaming, fuzzy replay, more providers, ops tooling.
 - [x] **`traceplay inspect`**: cassette timeline + token stats
 - [x] **GitHub Action** (`action.yml`, composite)
 - [x] **pre-commit hook** (`traceplay init --pre-commit`)
-- 52 tests passing (incl. streaming record→replay integration)
+- 59 tests passing (incl. streaming record→replay integration)
 
 ## v0.3 — Planned
 - [ ] **Web UI**: `traceplay ui` — local dashboard to browse cassettes,

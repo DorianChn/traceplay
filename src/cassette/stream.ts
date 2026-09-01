@@ -31,8 +31,9 @@ export function parseSSEData(line: string): unknown | null {
 }
 
 /**
- * Extract the full assistant content from an OpenAI-style SSE text by
- * concatenating every `choices[0].delta.content` chunk.
+ * Extract the full assistant content from an SSE stream. Supports both the
+ * OpenAI-compatible format (`choices[0].delta.content`) and the Gemini
+ * format (`candidates[0].content.parts[].text`).
  */
 export function extractStreamContent(sseText: string): string {
   let content = '';
@@ -40,33 +41,67 @@ export function extractStreamContent(sseText: string): string {
     const parsed = parseSSEData(line);
     if (!parsed) continue;
     const obj = parsed as Record<string, unknown>;
+
+    // OpenAI-compatible: choices[0].delta.content
     const choices = obj.choices;
-    if (!Array.isArray(choices) || choices.length === 0) continue;
-    const first = choices[0] as Record<string, unknown>;
-    const delta = first.delta as Record<string, unknown> | undefined;
-    if (delta && typeof delta.content === 'string') content += delta.content;
+    if (Array.isArray(choices) && choices.length > 0) {
+      const first = choices[0] as Record<string, unknown>;
+      const delta = first.delta as Record<string, unknown> | undefined;
+      if (delta && typeof delta.content === 'string') content += delta.content;
+      continue;
+    }
+
+    // Gemini: candidates[0].content.parts[].text
+    const candidates = obj.candidates;
+    if (Array.isArray(candidates) && candidates.length > 0) {
+      const cand = candidates[0] as Record<string, unknown>;
+      const contentObj = cand.content as Record<string, unknown> | undefined;
+      const parts = contentObj?.parts;
+      if (Array.isArray(parts)) {
+        for (const p of parts as Array<Record<string, unknown>>) {
+          if (typeof p.text === 'string') content += p.text;
+        }
+      }
+    }
   }
   return content;
 }
 
 /**
- * Extract token usage from an SSE stream (the final chunk often carries
- * `usage` for OpenAI, or an internal `x-*` usage field for some providers).
+ * Extract token usage from an SSE stream. Supports OpenAI
+ * (`usage.prompt_tokens` / `completion_tokens`) and Gemini
+ * (`usageMetadata.promptTokenCount` / `candidatesTokenCount`).
  */
 export function extractStreamUsage(sseText: string): StreamUsage | undefined {
   for (const line of sseText.split('\n')) {
     const parsed = parseSSEData(line);
     if (!parsed) continue;
     const obj = parsed as Record<string, unknown>;
+
+    // OpenAI-compatible final chunk
     const usage = obj.usage as Record<string, unknown> | undefined;
-    if (!usage) continue;
-    const promptTokens = usage.prompt_tokens;
-    const completionTokens = usage.completion_tokens;
-    if (typeof promptTokens === 'number' || typeof completionTokens === 'number') {
-      return {
-        promptTokens: typeof promptTokens === 'number' ? promptTokens : undefined,
-        completionTokens: typeof completionTokens === 'number' ? completionTokens : undefined,
-      };
+    if (usage) {
+      const promptTokens = usage.prompt_tokens;
+      const completionTokens = usage.completion_tokens;
+      if (typeof promptTokens === 'number' || typeof completionTokens === 'number') {
+        return {
+          promptTokens: typeof promptTokens === 'number' ? promptTokens : undefined,
+          completionTokens: typeof completionTokens === 'number' ? completionTokens : undefined,
+        };
+      }
+    }
+
+    // Gemini usageMetadata chunk
+    const um = obj.usageMetadata as Record<string, unknown> | undefined;
+    if (um) {
+      const pt = um.promptTokenCount;
+      const ct = um.candidatesTokenCount;
+      if (typeof pt === 'number' || typeof ct === 'number') {
+        return {
+          promptTokens: typeof pt === 'number' ? pt : undefined,
+          completionTokens: typeof ct === 'number' ? ct : undefined,
+        };
+      }
     }
   }
   return undefined;

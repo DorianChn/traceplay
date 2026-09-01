@@ -293,7 +293,7 @@ Your agent regression suite now runs before every commit.
 ```bash
 npm install
 npm run build
-npm test          # 39 tests, including record→replay integration
+npm test          # 59 tests, including record→replay integration
 npm run dev -- test examples/demo/suite.example.yaml
 ```
 

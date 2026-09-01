@@ -1,0 +1,12 @@
+suite: anthropic-demo
+description: Example suite using an Anthropic-format cassette (content blocks).
+cases:
+  - name: anthropic answer contains key concepts
+    cassette: ./cassette.anthropic.jsonl
+    assertions:
+      - kind: answer.contains
+        text: entanglement
+      - kind: answer.contains
+        text: correlated
+      - kind: budget.maxTokens
+        value: 200

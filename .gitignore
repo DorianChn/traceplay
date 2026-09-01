@@ -1,0 +1,11 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+# Local recordings never belong in git
+*.cassette.jsonl
+cassettes/local/
+.traceplay/
+.env
+.env.*
+!.env.example

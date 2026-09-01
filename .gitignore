@@ -5,7 +5,7 @@ dist/
 # Local recordings never belong in git
 *.cassette.jsonl
 cassettes/local/
-.agent-vcr/
+.traceplay/
 .env
 .env.*
 !.env.example

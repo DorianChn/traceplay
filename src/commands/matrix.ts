@@ -1,4 +1,5 @@
 import { promises as fs } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import { runMatrix, type MatrixEntry } from '../matrix/runner.js';
 import { formatMatrixConsole, formatMatrixMarkdown, formatMatrixJson } from '../report/matrix.js';
@@ -24,7 +25,10 @@ export async function runMatrixCmd(args: MatrixArgs): Promise<number> {
   const raw = await fs.readFile(args.config, 'utf8');
   const config = parseYaml(raw) as { runs?: MatrixEntry[]; format?: MatrixFormat; output?: string };
 
-  const runs = config.runs ?? [];
+  // Suite paths inside matrix.yaml are relative to the config file itself,
+  // not to the process working directory — so the command works from anywhere.
+  const configDir = dirname(args.config);
+  const runs = (config.runs ?? []).map((r) => ({ ...r, suite: resolve(configDir, r.suite) }));
   if (runs.length === 0) {
     console.error('[traceplay] matrix.yaml has no runs. Add at least one { name, suite } entry.');
     return 2;

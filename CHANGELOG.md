@@ -20,6 +20,9 @@
   resource-budget assertion.
 - **LLM-as-judge caching** — added a dedicated test proving disk-cache hits
   (no network) and graceful `todo` degradation on call failure.
+- **Matrix path resolution** — suite paths in `matrix.yaml` are now resolved
+  relative to the config file (not the working directory), so `traceplay
+  matrix` works from any cwd (regression test added).
 - **Consistency** — `package-lock.json` root version, pre-commit `rev`, and
   GitHub Action `uses:` tag now match v0.4.0.
 - **Tests** — added `parseArgs`, Gemini stream, non-200 status, gzip

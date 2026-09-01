@@ -65,6 +65,15 @@ describe('assert/engine — tool assertions', () => {
     expect(results[0].status).toBe('fail');
   });
 
+  it('tool.args fails gracefully when jsonPath is missing', async () => {
+    const results = await runAssertions(events, [
+      { kind: 'tool.args', name: 'get_weather', equals: 'Xiamen' } as never,
+    ]);
+    expect(results[0].status).toBe('fail');
+    expect(results[0].message).toContain('jsonPath');
+  });
+
+
   it('forbid.tool fails when called', async () => {
     const results = await runAssertions(events, [{ kind: 'forbid.tool', name: 'get_weather' }]);
     expect(results[0].status).toBe('fail');

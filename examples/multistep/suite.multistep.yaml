@@ -1,0 +1,28 @@
+name: multistep-demo
+# A looping agent sends the SAME prompt ("continue") twice and gets two
+# different drafts. Ordered replay (v0.6) returns them in sequence, and step:
+# lets you assert each intermediate answer rather than only the final one.
+cases:
+  - name: drafts-then-final
+    cassette: cassette.multistep.jsonl
+    assertions:
+      - kind: answer.contains
+        step: 1
+        text: outline
+      - kind: answer.contains
+        step: 2
+        text: details
+      - kind: answer.contains
+        text: shipped
+      - kind: tool.called
+        name: search
+      - kind: tool.args
+        name: search
+        jsonPath: $.topic
+        equals: release
+      - kind: forbid.tool
+        name: shell_exec
+      - kind: budget.maxSteps
+        value: 3
+      - kind: budget.maxTokens
+        value: 2000

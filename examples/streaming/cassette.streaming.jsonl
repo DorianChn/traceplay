@@ -1,0 +1,4 @@
+{"cassette":"traceplay","version":1,"recordedAt":"2026-09-01T00:00:00.000Z","redacted":true,"providerBaseUrl":"https://api.openai.com/v1","project":"streaming-demo"}
+{"id":"s1","seq":0,"at":"2026-09-01T00:00:00.000Z","type":"user.message","content":"Write a haiku about shipping code."}
+{"id":"s2","seq":1,"at":"2026-09-01T00:00:01.000Z","type":"llm.request","provider":"openai-compatible","model":"gpt-4o","messages":[{"role":"user","content":"Write a haiku about shipping code."}],"stream":true,"requestHash":"hash-stream-1"}
+{"id":"s3","seq":2,"at":"2026-09-01T00:00:02.000Z","type":"llm.response","requestId":"s2","status":200,"stream":true,"output":{"content":"Silent keystrokes fall,\nLogic blooms in midnight light,\nShip before the dawn."},"usage":{"promptTokens":30,"completionTokens":18}}

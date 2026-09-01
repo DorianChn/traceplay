@@ -1,0 +1,5 @@
+{"cassette":"traceplay","version":1,"recordedAt":"1970-01-01T00:00:00.000Z","redacted":true}
+{"id":"tc1","seq":0,"at":"1970-01-01T00:00:00.000Z","type":"tool.call","name":"get_ticket","callId":"c1","arguments":{"id":"TC-4821"}}
+{"id":"tr1","seq":1,"at":"1970-01-01T00:00:00.000Z","type":"tool.result","callId":"c1","output":{"ticket":"TC-4821","priority":"high","assignee":"mina","sla_hours":4}}
+{"id":"req1","seq":2,"at":"1970-01-01T00:00:00.000Z","type":"llm.request","provider":"other","model":"m","path":"/v1/chat/completions","messages":[{"role":"user","content":"triage TC-4821 and return JSON"}],"requestHash":"h1","turn":0}
+{"id":"res1","seq":3,"at":"1970-01-01T00:00:00.000Z","type":"llm.response","requestId":"req1","status":200,"output":"{\"ticket\":\"TC-4821\",\"priority\":\"high\",\"assignee\":\"mina\",\"nextStep\":\"route TC-4821 to mina within 4 hours\"}","usage":{"promptTokens":140,"completionTokens":38}}

@@ -1,0 +1,33 @@
+# v0.7 showcase: structured-output + data-flow guarantees + parametrized rows.
+# Run:
+#   traceplay test  examples/structured/suite.structured.yaml
+#   traceplay mutate examples/structured/suite.structured.yaml
+#   traceplay test  examples/structured/suite.structured.yaml --format html --output report.html
+suite: structured-support-agent
+
+cases:
+  - name: final answer is valid, well-shaped JSON and uses the tool result
+    cassette: cassette.structured.jsonl
+    assertions:
+      # 1) Must parse as JSON and carry these paths.
+      - kind: answer.shape
+        required: ["$.ticket", "$.priority", "$.assignee", "$.nextStep"]
+        fields:
+          "$.ticket": { matches: "^TC-\\d+$" }
+          "$.priority": { enum: ["low", "high"] }
+          "$.assignee": { type: string }
+          "$.nextStep": { contains: "mina" }
+
+      # 2) The answer must actually cite values get_ticket returned —
+      #    catches an agent that ignores its tools and hallucinates.
+      - kind: flow.usesResult
+        tool: get_ticket
+        minHits: 2
+
+  - name: every key field is echoed in the answer (data-driven)
+    cassette: cassette.structured.jsonl
+    each:
+      - { value: TC-4821 }
+      - { value: mina }
+    assertions:
+      - { kind: answer.contains, text: "{{value}}" }

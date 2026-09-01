@@ -1,0 +1,40 @@
+name: 'traceplay'
+description: 'Run a traceplay agent regression suite in CI — offline replay of AI agent cassettes with behavioral assertions.'
+author: 'traceplay'
+
+inputs:
+  suite:
+    description: 'Path to the traceplay suite file (suite.yaml or suite.json).'
+    required: true
+    default: 'suite.yaml'
+  format:
+    description: 'Report format: console | json | markdown.'
+    required: false
+    default: 'console'
+  output:
+    description: 'When format is json/markdown, write the report to this file path.'
+    required: false
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Run traceplay test
+      shell: bash
+      run: |
+        set -e
+        if [ "${{ inputs.format }}" = "markdown" ]; then
+          npx --yes traceplay test "${{ inputs.suite }}" --format markdown --output "${{ inputs.output || 'traceplay-report.md' }}"
+        elif [ "${{ inputs.format }}" = "json" ]; then
+          npx --yes traceplay test "${{ inputs.suite }}" --format json --output "${{ inputs.output || 'traceplay-report.json' }}"
+        else
+          npx --yes traceplay test "${{ inputs.suite }}"
+        fi
+
+branding:
+  icon: 'video'
+  color: 'blue'

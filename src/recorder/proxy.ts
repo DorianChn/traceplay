@@ -1,4 +1,5 @@
 import http from 'node:http';
+import { gunzipSync, inflateSync } from 'node:zlib';
 import { writeHeader, appendEvent } from '../cassette/store.js';
 import {
   normalizeRequest,
@@ -38,7 +39,8 @@ function setResponseHeaders(
   headers: Record<string, string>,
   streaming: boolean,
 ): void {
-  res.statusCode = 200;
+  // NOTE: statusCode must be set by the caller before this runs; it is never
+  // overridden here so non-200 upstream responses are recorded faithfully.
   for (const [key, value] of Object.entries(headers)) {
     const lower = key.toLowerCase();
     if (lower === 'content-length' || lower === 'transfer-encoding' || lower === 'connection') continue;
@@ -180,13 +182,33 @@ export async function startRecorder(options: RecorderOptions): Promise<RecorderH
         return;
       }
 
-      // Non-streaming: buffer, persist, then reply.
+      // Non-streaming: buffer (decompress if needed), persist, then reply.
       const bodyChunks: Buffer[] = [];
       upstream.res.on('data', (c: Buffer) => bodyChunks.push(c));
       await new Promise<void>((resolve) => upstream.res.on('end', resolve));
-      const upstreamBody = Buffer.concat(bodyChunks).toString('utf8');
+      const enc = (upstream.headers['content-encoding'] || '').toLowerCase();
+      let upstreamBuffer = Buffer.concat(bodyChunks);
+      if (enc === 'gzip') {
+        try {
+          upstreamBuffer = gunzipSync(upstreamBuffer);
+        } catch {
+          // keep raw bytes if decompression fails
+        }
+      } else if (enc === 'deflate') {
+        try {
+          upstreamBuffer = inflateSync(upstreamBuffer);
+        } catch {
+          // keep raw bytes if decompression fails
+        }
+      }
+      const upstreamBody = upstreamBuffer.toString('utf8');
 
       if (normalized) {
+        // The stored body is decompressed plain text; drop encoding headers
+        // so replay does not tell clients to decompress already-plain data.
+        const storedHeaders = { ...upstream.headers };
+        delete storedHeaders['content-encoding'];
+        delete storedHeaders['content-length'];
         const responseNorm = normalizeResponse(
           normalized.event.id,
           upstream.status,
@@ -196,8 +218,8 @@ export async function startRecorder(options: RecorderOptions): Promise<RecorderH
           latencyMs,
         );
         responseNorm.event.headers = options.redact
-          ? redactHeaders(upstream.headers)
-          : upstream.headers;
+          ? redactHeaders(storedHeaders)
+          : storedHeaders;
         await appendEvent(options.cassettePath, responseNorm.event);
       }
 

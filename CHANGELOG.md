@@ -1,5 +1,32 @@
 # Changelog
 
+## 2026-09-01 — hardening pass
+
+- **CLI entry guard** — `cli.ts` only runs `main()` when executed directly
+  (ESM `import.meta.url` check); importing it no longer starts servers or
+  calls `process.exit`.
+- **`--flag=value` syntax** — CLI flags accept `=` syntax (`--format=json`) in
+  addition to `--flag value`; `parseArgs` is exported and unit-tested.
+- **Faithful status codes** — the recorder no longer rewrites upstream
+  responses to `200`; non-200 responses are recorded and replayed with their
+  real status (regression test added).
+- **Gemini streaming** — SSE content/usage extraction now understands Gemini's
+  `candidates[].content.parts[].text` and `usageMetadata` (tests added).
+- **gzip/deflate responses** — upstream responses are transparently
+  decompressed before recording; `content-encoding` is dropped so replay
+  serves plain text.
+- **Vacuous assertions** — `generate` no longer emits `answer.contains: ""`
+  for empty inputs (would pass for every answer); it now emits only the
+  resource-budget assertion.
+- **LLM-as-judge caching** — added a dedicated test proving disk-cache hits
+  (no network) and graceful `todo` degradation on call failure.
+- **Consistency** — `package-lock.json` root version, pre-commit `rev`, and
+  GitHub Action `uses:` tag now match v0.4.0.
+- **Tests** — added `parseArgs`, Gemini stream, non-200 status, gzip
+  integration, and judge-cache tests. Now **85 tests**, all passing.
+
+---
+
 ## v0.4.0 — Edge-case generation, matrix runner, coverage, plugin system
 
 **New capabilities**

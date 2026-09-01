@@ -71,7 +71,7 @@ export async function startReplayer(options: ReplayerOptions): Promise<ReplayerH
       if (responseEvent.headers) {
         for (const [key, value] of Object.entries(responseEvent.headers)) {
           const lower = key.toLowerCase();
-          if (lower === 'content-length' || lower === 'transfer-encoding' || lower === 'connection') continue;
+          if (lower === 'content-length' || lower === 'transfer-encoding' || lower === 'connection' || lower === 'content-encoding') continue;
           if (lower === 'content-type') hasContentType = true;
           res.setHeader(key, value);
         }

@@ -1,5 +1,6 @@
 import http from 'node:http';
 import https from 'node:https';
+import { gunzipSync, inflateSync } from 'node:zlib';
 import type { IncomingMessage } from 'node:http';
 import { URL } from 'node:url';
 
@@ -85,10 +86,31 @@ export function forwardRequest(
       const chunks: Buffer[] = [];
       res.on('data', (chunk) => chunks.push(chunk));
       res.on('end', () => {
+        const raw = Buffer.concat(chunks);
+        const enc = (res.headers['content-encoding'] || '').toLowerCase();
+        let body = raw;
+        if (enc === 'gzip') {
+          try {
+            body = gunzipSync(raw);
+          } catch {
+            // keep raw bytes if decompression fails
+          }
+        } else if (enc === 'deflate') {
+          try {
+            body = inflateSync(raw);
+          } catch {
+            // keep raw bytes if decompression fails
+          }
+        }
+        const headers = flattenHeaders(res.headers);
+        // Replay serves the decompressed plain text, so never keep the
+        // encoding header or a stale content-length.
+        if (enc) delete headers['content-encoding'];
+        delete headers['content-length'];
         resolve({
           status: res.statusCode || 502,
-          headers: flattenHeaders(res.headers),
-          body: Buffer.concat(chunks).toString('utf8'),
+          headers,
+          body: body.toString('utf8'),
         });
       });
     });

@@ -56,4 +56,26 @@ describe('cassette/stream', () => {
     expect(extractStreamUsage(sse)).toEqual({ promptTokens: 5, completionTokens: 3 });
     expect(sse.trimEnd().endsWith('data: [DONE]')).toBe(true);
   });
+
+  it('extracts content from a Gemini-style stream', () => {
+    const sse = [
+      'data: {"candidates":[{"content":{"role":"model","parts":[{"text":"Hello"}]}}]}',
+      '',
+      'data: {"candidates":[{"content":{"parts":[{"text":" world"}]}}]}',
+      '',
+      'data: {"candidates":[{"content":{"parts":[{"text":""}]},"finishReason":"STOP"}]}',
+      '',
+    ].join('\n');
+    expect(extractStreamContent(sse)).toBe('Hello world');
+  });
+
+  it('extracts usage from a Gemini usageMetadata chunk', () => {
+    const sse = [
+      'data: {"candidates":[{"content":{"parts":[{"text":"hi"}]}}]}',
+      '',
+      'data: {"usageMetadata":{"promptTokenCount":42,"candidatesTokenCount":7}}',
+      '',
+    ].join('\n');
+    expect(extractStreamUsage(sse)).toEqual({ promptTokens: 42, completionTokens: 7 });
+  });
 });

@@ -276,7 +276,7 @@ src/
 Drop a step into your workflow — no build setup needed:
 
 ```yaml
-- uses: traceplay/action@v0.2.0
+- uses: traceplay/action@v0.4.0
   with:
     suite: suite.yaml
     format: markdown   # console | json | markdown
@@ -294,7 +294,7 @@ Add the hook to your `.pre-commit-config.yaml` (or generate it with
 ```yaml
 repos:
   - repo: https://github.com/<your-handle>/traceplay
-    rev: v0.2.0
+    rev: v0.4.0
     hooks:
       - id: traceplay
         args: [suite.yaml]
@@ -393,7 +393,7 @@ registerAssertion('custom.minEvents', ({ events, assertion }) => ({
 ```bash
 npm install
 npm run build
-npm test          # 39 tests, including record→replay integration
+npm test          # 85 tests, including record→replay integration
 npm run dev -- test examples/demo/suite.example.yaml
 ```
 

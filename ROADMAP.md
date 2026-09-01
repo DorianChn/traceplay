@@ -25,7 +25,7 @@ Intelligence & extensibility: generation, matrix, coverage, plugins.
 - [x] **Matrix runner** (`traceplay matrix`) — multi-suite comparison scorecards
 - [x] **Coverage** (`traceplay coverage`) — assertion usage + untested event types
 - [x] **Plugin system** — `registerAssertion(kind, fn)` custom assertions
-- 76 tests passing
+- 85 tests passing
 
 ## v0.5+ — Future directions
 - [ ] **LLM-powered generation**: use a judge model to produce semantic edge cases when `TRACEPLAY_JUDGE_API_KEY` is set

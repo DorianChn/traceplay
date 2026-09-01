@@ -1,0 +1,6 @@
+{"cassette":"agent-vcr","version":1,"recordedAt":"2026-09-01T00:00:00.000Z","redacted":true,"providerBaseUrl":"https://api.openai.com/v1","project":"demo"}
+{"id":"e1","seq":0,"at":"2026-09-01T00:00:00.000Z","type":"user.message","content":"weather in Xiamen?"}
+{"id":"e2","seq":1,"at":"2026-09-01T00:00:01.000Z","type":"llm.request","provider":"openai-compatible","model":"demo","messages":[{"role":"user","content":"weather in Xiamen?"}],"requestHash":"hash-demo-1"}
+{"id":"e3","seq":2,"at":"2026-09-01T00:00:02.000Z","type":"tool.call","name":"get_weather","arguments":{"city":"Xiamen"}}
+{"id":"e4","seq":3,"at":"2026-09-01T00:00:03.000Z","type":"tool.result","callId":"e3","output":"sunny, 31C"}
+{"id":"e5","seq":4,"at":"2026-09-01T00:00:04.000Z","type":"llm.response","requestId":"e2","status":200,"output":{"choices":[{"message":{"content":"Xiamen is sunny, 31C."}}]},"usage":{"promptTokens":120,"completionTokens":24}}

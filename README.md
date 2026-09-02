@@ -2,7 +2,7 @@
 
 > **Record, replay, and test AI agent trajectories.** VCR + pytest for AI agents — capture a real run once, replay it offline with zero tokens, and assert behavior in CI.
 
-[![CI](https://github.com/<your-handle>/traceplay/actions/workflows/ci.yml/badge.svg)](https://github.com/<your-handle>/traceplay/actions)
+[![CI](https://github.com/DorianChn/traceplay/actions/workflows/ci.yml/badge.svg)](https://github.com/DorianChn/traceplay/actions)
 [![npm version](https://img.shields.io/npm/v/traceplay.svg)](https://www.npmjs.com/package/traceplay)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![tests](https://img.shields.io/badge/tests-101%20passing-brightgreen)]()
@@ -324,7 +324,7 @@ Add the hook to your `.pre-commit-config.yaml` (or generate it with
 
 ```yaml
 repos:
-  - repo: https://github.com/<your-handle>/traceplay
+  - repo: https://github.com/DorianChn/traceplay
     rev: v0.4.0
     hooks:
       - id: traceplay

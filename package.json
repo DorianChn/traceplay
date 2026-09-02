@@ -53,10 +53,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/traceplay/traceplay.git"
+    "url": "git+https://github.com/DorianChn/traceplay.git"
   },
-  "homepage": "https://github.com/traceplay/traceplay#readme",
+  "homepage": "https://github.com/DorianChn/traceplay#readme",
   "bugs": {
-    "url": "https://github.com/traceplay/traceplay/issues"
+    "url": "https://github.com/DorianChn/traceplay/issues"
   }
 }

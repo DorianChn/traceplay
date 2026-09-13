@@ -263,6 +263,15 @@ npm test          # 44 tests, including record→replay integration
 npm run dev -- test examples/demo/suite.example.yaml
 ```
 
+---
+
+## More in this suite
+
+AI agent security toolkit by DorianChn:
+
+- [agent-canary](https://github.com/DorianChn/agent-canary) — zero-false-positive honeypot tripwires: decoy MCP tools + canary tokens
+- [agent-gate](https://github.com/DorianChn/agent-gate) — tool-call policy gateway: least privilege, short-lived credentials, audit
+- [reposieve](https://github.com/DorianChn/reposieve) — privacy-first repository context packs for coding agents
 ## License
 
 MIT — see [LICENSE](./LICENSE).

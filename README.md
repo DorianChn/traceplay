@@ -1,9 +1,8 @@
 # traceplay
 
-> **Record, replay, and test AI agent trajectories.** VCR + pytest for AI agents — capture a real run once, replay it offline with zero tokens, and assert behavior in CI.
+> **Record, replay, and test AI agent trajectories.** VCR-style replay and assertions for AI agents — capture a real run once, replay it offline with zero tokens, and assert behavior in CI.
 
-[![CI](https://github.com/<your-handle>/traceplay/actions/workflows/ci.yml/badge.svg)](https://github.com/<your-handle>/traceplay/actions)
-[![npm version](https://img.shields.io/npm/v/traceplay.svg)](https://www.npmjs.com/package/traceplay)
+[![CI](https://github.com/DorianChn/traceplay/actions/workflows/ci.yml/badge.svg)](https://github.com/DorianChn/traceplay/actions)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![tests](https://img.shields.io/badge/tests-59%20passing-brightgreen)]()
 
@@ -19,8 +18,8 @@ AI agents fail silently. A prompt edit, a model upgrade, or a tool schema change
 ## 30-second demo
 
 ```bash
-# 1. Record a real run
-npx traceplay record --port 8123 --out ./cassettes/weather.jsonl
+# 1. Record a real run (after building from source; see Installation)
+node dist/cli.js record --port 8123 --out ./cassettes/weather.jsonl
 #    in another terminal: BASE_URL=http://localhost:8123 node my-agent.js
 
 # 2. Write a test suite
@@ -38,7 +37,7 @@ cases:
 EOF
 
 # 3. Run offline, in CI
-npx traceplay test suite.yaml
+node dist/cli.js test suite.yaml
 ```
 
 ```
@@ -66,10 +65,14 @@ scenarios. Each has a cassette + suite YAML — run them with
 
 ## Installation
 
+The npm package is not published yet. Install the current source version:
+
 ```bash
-npm install -g traceplay
-# or run without installing
-npx traceplay --help
+git clone https://github.com/DorianChn/traceplay
+cd traceplay
+npm ci
+npm run build
+node dist/cli.js --help
 ```
 
 Requires Node ≥ 20.
@@ -259,7 +262,7 @@ src/
 ```bash
 npm install
 npm run build
-npm test          # 44 tests, including record→replay integration
+npm test          # 59 tests, including record→replay integration
 npm run dev -- test examples/demo/suite.example.yaml
 ```
 

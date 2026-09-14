@@ -74,6 +74,22 @@ describe('assert/engine — tool assertions', () => {
   });
 
 
+  it('tool.args reports invalid regex as a failed assertion', async () => {
+    const results = await runAssertions(events, [
+      { kind: 'tool.args', name: 'get_weather', jsonPath: '$.city', matches: '[' },
+    ]);
+    expect(results[0].status).toBe('fail');
+    expect(results[0].message).toContain('regex is invalid');
+  });
+
+  it('tool.args requires a comparison operator', async () => {
+    const results = await runAssertions(events, [
+      { kind: 'tool.args', name: 'get_weather', jsonPath: '$.city' } as never,
+    ]);
+    expect(results[0].status).toBe('fail');
+    expect(results[0].message).toContain('equals');
+  });
+
   it('forbid.tool fails when called', async () => {
     const results = await runAssertions(events, [{ kind: 'forbid.tool', name: 'get_weather' }]);
     expect(results[0].status).toBe('fail');
@@ -105,6 +121,12 @@ describe('assert/engine — answer assertions', () => {
   it('answer.matches regex', async () => {
     const results = await runAssertions(events, [{ kind: 'answer.matches', regex: '\\d+C' }]);
     expect(results[0].status).toBe('pass');
+  });
+
+  it('answer.matches reports invalid regex as a failed assertion', async () => {
+    const results = await runAssertions(events, [{ kind: 'answer.matches', regex: '[' }]);
+    expect(results[0].status).toBe('fail');
+    expect(results[0].message).toContain('regex is invalid');
   });
 
   it('answer.judge is todo without API key', async () => {

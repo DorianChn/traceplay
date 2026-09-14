@@ -37,7 +37,16 @@ export function checkAnswerContains(events: TraceEvent[], assertion: Extract<Ass
 
 export function checkAnswerMatches(events: TraceEvent[], assertion: Extract<Assertion, { kind: 'answer.matches' }>): AssertResult {
   const text = extractAnswerText(events);
-  const found = new RegExp(assertion.regex).test(text);
+  let found: boolean;
+  try {
+    found = new RegExp(assertion.regex).test(text);
+  } catch (error) {
+    return {
+      status: 'fail',
+      assertion,
+      message: `answer regex is invalid: ${(error as Error).message}`,
+    };
+  }
   return {
     status: found ? 'pass' : 'fail',
     assertion,

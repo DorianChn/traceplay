@@ -58,6 +58,13 @@ export function checkToolArgs(events: TraceEvent[], assertion: Extract<Assertion
   if (calls.length === 0) {
     return { status: 'fail', assertion, message: `tool "${assertion.name}" was never called` };
   }
+  if (assertion.equals === undefined && assertion.matches === undefined) {
+    return {
+      status: 'fail',
+      assertion,
+      message: 'tool.args assertion needs either "equals" or "matches"',
+    };
+  }
   for (const call of calls) {
     const matches = jsonPath(call.arguments, assertion.jsonPath);
     if (assertion.equals !== undefined) {
@@ -70,7 +77,16 @@ export function checkToolArgs(events: TraceEvent[], assertion: Extract<Assertion
       };
     }
     if (assertion.matches !== undefined) {
-      const re = new RegExp(assertion.matches);
+      let re: RegExp;
+      try {
+        re = new RegExp(assertion.matches);
+      } catch (error) {
+        return {
+          status: 'fail',
+          assertion,
+          message: `tool.args regex is invalid: ${(error as Error).message}`,
+        };
+      }
       const hit = matches.some((m) => re.test(typeof m === 'string' ? m : JSON.stringify(m)));
       if (!hit) continue;
       return {
